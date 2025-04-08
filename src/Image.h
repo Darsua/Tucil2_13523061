@@ -13,7 +13,9 @@ public:
     static std::streamsize sizeAfter;
 
     explicit Image(const std::string& pathString); // Constructor
+    Image(const Image&); // Copy constructor
     ~Image(); // Destructor
+    Image& operator=(const Image&); // Dirty assignment operator
 
     bool isLoaded() const; // Checks if the image is successfully loaded
     void save(const std::string& pathString) const; // Saves the image to a file

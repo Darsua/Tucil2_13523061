@@ -48,6 +48,27 @@ Image::Image(const string &pathString): width(0), height(0), channels(0) // Para
     sizeBefore = getFileSize(pathString);
 }
 
+Image::Image(const Image &img) : width(img.width), height(img.height), channels(img.channels) // Copy constructor
+{
+    // Allocate memory for the image data
+    data = new unsigned char**[height];
+    for (int i = 0; i < height; ++i) {
+        data[i] = new unsigned char*[width];
+        for (int j = 0; j < width; ++j) {
+            data[i][j] = new unsigned char[channels];
+        }
+    }
+
+    // Copy the pixel data
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                data[i][j][k] = img.data[i][j][k];
+            }
+        }
+    }
+}
+
 Image::~Image() { // Destructor
     if (data) {
         for (int i = 0; i < height; ++i) {
@@ -60,6 +81,20 @@ Image::~Image() { // Destructor
         }
         delete[] data;
     }
+}
+
+Image& Image::operator=(const Image &img) { // Dirty assignment operator
+    if (this != &img & this->width == img.width && this->height == img.height && this->channels == img.channels) {
+        // Copy pixel data
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                for (int k = 0; k < channels; ++k) {
+                    data[i][j][k] = img.data[i][j][k];
+                }
+            }
+        }
+    }
+    return *this;
 }
 
 bool Image::isLoaded() const {

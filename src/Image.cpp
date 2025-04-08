@@ -91,10 +91,6 @@ int Image::getHeight() const {
     return height;
 }
 
-int Image::getChannels() const {
-    return channels;
-}
-
 double* Image::getMean(const int x1, const int y1, const int x2, const int y2) const {
     auto* mean = new double[channels];
     for (int k = 0; k < channels; ++k) {
@@ -146,6 +142,111 @@ double Image::getVariance(const int x1, const int y1, const int x2, const int y2
     delete[] variances;
 
     return variance / channels;
+}
+
+double Image::getMAD(const int x1, const int y1, const int x2, const int y2) const {
+    const double* mean = getMean(x1, y1, x2, y2);
+
+    auto* deviations = new double[channels];
+    for (int k = 0; k < channels; ++k) {
+        deviations[k] = 0;
+    }
+
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                deviations[k] += abs(data[i][j][k] - mean[k]) ;
+            }
+        }
+    }
+
+    for (int k = 0; k < channels; ++k) {
+        deviations[k] /= (x2 - x1 + 1) * (y2 - y1 + 1);
+    }
+
+    double deviation = 0;
+    for (int k = 0; k < channels; ++k) {
+        deviation += deviations[k];
+    }
+
+    delete[] mean;
+    delete[] deviations;
+
+    return deviation / channels;
+}
+
+double Image::getMPD(const int x1, const int y1, const int x2, const int y2) const {
+    int* maxes = new int[channels];
+    int* mins = new int[channels];
+
+    for (int k = 0; k < channels; ++k) {
+        maxes[k] = 0;
+        mins[k] = 255;
+    }
+
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                if (data[i][j][k] > maxes[k]) {
+                    maxes[k] = data[i][j][k];
+                }
+                if (data[i][j][k] < mins[k]) {
+                    mins[k] = data[i][j][k];
+                }
+            }
+        }
+    }
+
+    double diff = 0;
+    for (int k = 0; k < channels; ++k) {
+        diff += maxes[k] - mins[k];
+    }
+
+    delete[] maxes;
+    delete[] mins;
+
+    return diff / channels;
+}
+
+double Image::getEntropy(const int x1, const int y1, const int x2, const int y2) const {
+    int **histograms = new int*[channels];
+    for (int k = 0; k < channels; ++k) {
+        histograms[k] = new int[256]{0};
+    }
+
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                histograms[k][data[i][j][k]]++;
+            }
+        }
+    }
+
+    auto* entropies = new double[channels];
+    int width = x2 - x1 + 1;
+    int height = y2 - y1 + 1;
+    for (int k = 0; k < channels; ++k) {
+        entropies[k] = 0;
+        for (int i = 0; i < 256; ++i) {
+            if (histograms[k][i] > 0) {
+                double p = static_cast<double>(histograms[k][i]) / (width * height);
+                entropies[k] -= p * log2(p);
+            }
+        }
+    }
+
+    double entropy = 0;
+    for (int k = 0; k < channels; ++k) {
+        entropy += entropies[k];
+    }
+
+    delete[] entropies;
+    for (int k = 0; k < channels; ++k) {
+        delete[] histograms[k];
+    }
+    delete[] histograms;
+
+    return entropy / channels;
 }
 
 void Image::normalize(const int x1, const int y1, const int x2, const int y2) const {

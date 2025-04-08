@@ -67,8 +67,14 @@ int main() {
     }
     Quadtree::setImage(image);
 
-    // cout << "Enter the method (1 for Otsu, 2 for Triangle):" << endl;
-    // cin >> method;
+    cout << "1. Variance\n2. Mean Abosolute Deviation\n3. Max Pixel Difference\n4. Entropy" << endl;
+    cout << "Enter the method of compression (1 to 4):" << endl;
+    cin >> method;
+    if (stoi(method) < 1 || stoi(method) > 4) {
+        cerr << "Invalid method. Please enter a number between 1 and 4." << endl;
+        return 1;
+    }
+    Quadtree::setMethod(stoi(method));
 
     cout << "Enter the threshold value (Rec. 0-255):" << endl;
     cin >> threshold;
@@ -79,7 +85,7 @@ int main() {
     Quadtree::setMinBlockSize(stoi(minBlockSize));
 
     //cout << "Enter the output path for the processed image:" << endl;
-    // cin >> outputPath;
+    //cin >> outputPath;
 
     cout << "Processing image..." << endl;
     Quadtree::Compress();

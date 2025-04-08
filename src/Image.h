@@ -16,10 +16,13 @@ public:
 
     int getWidth() const; // Returns the width of the image
     int getHeight() const; // Returns the height of the image
-    int getChannels() const; // Returns the number of channels in the image
 
     double* getMean(int x1, int y1, int x2, int y2) const; // Returns the mean of pixel values in a region
     double getVariance(int x1, int y1, int x2, int y2) const; // Returns the variance of pixel values in a region
+    double getMAD(int x1, int y1, int x2, int y2) const; // Returns the mean absolute deviation of pixel values in a region
+    double getMPD(int x1, int y1, int x2, int y2) const; // Returns the max pixel difference of pixel values in a region
+    double getEntropy(int x1, int y1, int x2, int y2) const; // Returns the entropy of pixel values in a region
+
     void normalize(int x1, int y1, int x2, int y2) const; // Normalizes pixel values in a region
 };
 

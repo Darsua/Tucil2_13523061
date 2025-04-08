@@ -2,13 +2,15 @@
 
 using namespace std;
 
+int Quadtree::method = 0;
 int Quadtree::minBlockSize = 2;
 int Quadtree::threshold = 0;
 Image* Quadtree::image = nullptr;
 
 Quadtree::Quadtree(const int x1, const int y1, const int x2, const int y2) : x1(x1), y1(y1), x2(x2), y2(y2) { // NOLINT(*-no-recursion)
+    double error = getError();
 
-    if (image->getVariance(x1, y1, x2, y2) > threshold && (x2 - x1) * (y2 - y1) > minBlockSize) {
+    if (error > threshold && (x2 - x1) * (y2 - y1) > minBlockSize) {
         const int midX = (x1 + x2) / 2;
         const int midY = (y1 + y2) / 2;
 
@@ -26,6 +28,25 @@ Quadtree::~Quadtree() {
     for (auto & i : children) {
         delete i;
     }
+}
+
+double Quadtree::getError() const {
+    switch (method) {
+        case 1:
+            return image->getVariance(x1, y1, x2, y2);
+        case 2:
+            return image->getMAD(x1, y1, x2, y2);
+        case 3:
+            return image->getMPD(x1, y1, x2, y2);
+        case 4:
+            return image->getEntropy(x1, y1, x2, y2);
+        default:
+            return 0;
+    }
+}
+
+void Quadtree::setMethod(const int m) {
+    method = m;
 }
 
 void Quadtree::setImage(Image& img) {

@@ -1,82 +1,162 @@
+#include "Image.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+#include <iostream>
 
 using namespace std;
 
-class Image {
-    int width, height, channels;
-    unsigned char*** data;
+Image::Image(const string &pathString): width(0), height(0), channels(0) // Parameterized constructor
+{
+    // Convert string to char* (stbi_load requires char*)
+    char* path = new char [pathString.length() + 1];
+    strcpy(path, pathString.c_str());
 
-public:
-    Image() : width(0), height(0), channels(0), data(nullptr) {} // Default constructor
+    // Load the image (returns an unsigned char* to pixel data)
+    unsigned char* rawImg = stbi_load(path, &width, &height, &channels, 0);
+    delete[] path;
 
-    explicit Image(const string &pathString): width(0), height(0), channels(0) { // Parameterized constructor
-        // Convert string to char* (stbi_load requires char*)
-        char* path = new char [pathString.length() + 1];
-        strcpy(path, pathString.c_str());
+    // Check if the image was loaded successfully
+    if (rawImg == nullptr) {
+        return;
+    } // If loading fails, return
 
-
-        // Load the image (returns an unsigned char* to pixel data)
-        unsigned char* rawImg = stbi_load(path, &width, &height, &channels, 0);
-        delete[] path;
-
-        // Check if the image was loaded successfully
-        if (rawImg == nullptr) {return;} // If loading fails, return
-
-        // Allocate memory for the image data
-        data = new unsigned char**[height];
-        for (int i = 0; i < height; ++i) {
-            data[i] = new unsigned char*[width];
-            for (int j = 0; j < width; ++j) {
-                data[i][j] = new unsigned char[channels];
-            }
-        }
-
-        // Copy the pixel data
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                for (int k = 0; k < channels; ++k) {
-                    data[i][j][k] = rawImg[(i * width + j) * channels + k];
-                }
-            }
-        }
-
-        // Free the raw image data
-        stbi_image_free(rawImg);
-    }
-
-    ~Image() { // Destructor
-        if (data) {
-            for (int i = 0; i < height; ++i) {
-                if (data[i]) {
-                    for (int j = 0; j < width; ++j) {
-                        delete[] data[i][j];
-                    }
-                    delete[] data[i];
-                }
-            }
-            delete[] data;
+    // Allocate memory for the image data
+    data = new unsigned char**[height];
+    for (int i = 0; i < height; ++i) {
+        data[i] = new unsigned char*[width];
+        for (int j = 0; j < width; ++j) {
+            data[i][j] = new unsigned char[channels];
         }
     }
 
-    void printResolution() const {
-        cout << "Resolution: " << width << "x" << height << endl;
-    }
-
-    void printPixel(const int x, const int y) const {
-        if (x < 0 || x >= width || y < 0 || y >= height) {
-            cout << "Pixel coordinates out of bounds!" << endl;
-            return;
-        }
-
-        cout << "Pixel at (" << x << ", " << y << "): ";
+    // Copy the pixel data
+    for (int i = 0; i < height; ++i) {for (int j = 0; j < width; ++j) {
         for (int k = 0; k < channels; ++k) {
-            cout << static_cast<int>(data[y][x][k]) << " ";
+            data[i][j][k] = rawImg[(i * width + j) * channels + k];
+            }
         }
-        cout << endl;
     }
 
-    bool isLoaded() const {
-        return data != nullptr;
+    // Free the raw image data
+    stbi_image_free(rawImg);
+}
+
+Image::~Image() { // Destructor
+    if (data) {
+        for (int i = 0; i < height; ++i) {
+            if (data[i]) {
+                for (int j = 0; j < width; ++j) {
+                    delete[] data[i][j];
+                }
+                delete[] data[i];
+            }
+        }
+        delete[] data;
     }
-};
+}
+
+bool Image::isLoaded() const {
+    return data != nullptr && width > 0 && height > 0 && channels > 0;
+}
+
+void Image::save(const string &pathString) const {
+    // Convert string to char* (stbi_write_png requires char*)
+    char* path = new char[pathString.length() + 1];
+    strcpy(path, pathString.c_str());
+
+    // Revert the image data to a single array for saving
+    auto* rawImg = new unsigned char[width * height * channels];
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                rawImg[(i * width + j) * channels + k] = data[i][j][k];
+            }
+        }
+    }
+
+    stbi_write_png(path, width, height, channels, rawImg, width * channels);
+
+    cout << "Image saved to " << pathString << endl;
+    delete[] path;
+    delete[] rawImg;
+}
+
+int Image::getWidth() const {
+    return width;
+}
+
+int Image::getHeight() const {
+    return height;
+}
+
+int Image::getChannels() const {
+    return channels;
+}
+
+double* Image::getMean(const int x1, const int y1, const int x2, const int y2) const {
+    auto* mean = new double[channels];
+    for (int k = 0; k < channels; ++k) {
+        mean[k] = 0;
+    }
+
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                mean[k] += data[i][j][k];
+            }
+        }
+    }
+
+    for (int k = 0; k < channels; ++k) {
+        mean[k] /= (x2 - x1 + 1) * (y2 - y1 + 1);
+    }
+
+    return mean;
+}
+
+double Image::getVariance(const int x1, const int y1, const int x2, const int y2) const {
+    const double* mean = getMean(x1, y1, x2, y2);
+
+    auto* variances = new double[channels];
+    for (int k = 0; k < channels; ++k) {
+        variances[k] = 0;
+    }
+
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                const double diff = data[i][j][k] - mean[k];
+                variances[k] += diff * diff;
+            }
+        }
+    }
+
+    for (int k = 0; k < channels; ++k) {
+        variances[k] /= (x2 - x1 + 1) * (y2 - y1 + 1);
+    }
+
+    double variance = 0;
+    for (int k = 0; k < channels; ++k) {
+        variance += variances[k];
+    }
+
+    delete[] mean;
+    delete[] variances;
+
+    return variance / channels;
+}
+
+void Image::normalize(const int x1, const int y1, const int x2, const int y2) const {
+    const double* mean = getMean(x1, y1, x2, y2);
+
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                data[i][j][k] = static_cast<unsigned char>(mean[k]);
+            }
+        }
+    }
+    delete[] mean;
+}

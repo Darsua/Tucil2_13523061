@@ -1,6 +1,7 @@
 #include <iostream>
 #include <windows.h>
-#include "Image.cpp"
+#include "Image.h"
+#include "Quadtree.h"
 
 using namespace std;
 
@@ -52,34 +53,37 @@ void miku()
 }
 
 int main() {
-    miku(); // Splash Art
+    miku(); // Splash Art :3
 
     string inputPath, method, threshold, minBlockSize, outputPath;
 
     cout << "Enter the path to your image:" << endl;
     cin >> inputPath;
 
-    const Image input = Image(inputPath);
-    if (!input.isLoaded()) {
+    Image image = Image(inputPath);
+    if (!image.isLoaded()) {
         cerr << "Failed to load image. Please check the file path." << endl;
         return 1;
     }
+    Quadtree::setImage(image);
 
-    input.printResolution();
-    input.printPixel(390,390);
-    return 0;
+    // cout << "Enter the method (1 for Otsu, 2 for Triangle):" << endl;
+    // cin >> method;
 
-    cout << "Enter the method (1 for Otsu, 2 for Triangle):" << endl;
-    cin >> method;
-
-    cout << "Enter the threshold value (0-255):" << endl;
+    cout << "Enter the threshold value (Rec. 0-255):" << endl;
     cin >> threshold;
+    Quadtree::setThreshold(stoi(threshold));
 
-    cout << "Enter the minimum block size (e.g., 15):" << endl;
+    cout << "Enter the minimum block size (e.g. 63):" << endl;
     cin >> minBlockSize;
+    Quadtree::setMinBlockSize(stoi(minBlockSize));
 
-    cout << "Enter the output path for the processed image:" << endl;
-    cin >> outputPath;
+    //cout << "Enter the output path for the processed image:" << endl;
+    // cin >> outputPath;
+
+    cout << "Processing image..." << endl;
+    Quadtree::Compress();
+    image.save("../output.png");
 
     return 0;
 }

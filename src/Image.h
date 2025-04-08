@@ -2,17 +2,22 @@
 #define IMAGE_H
 
 #include <string>
+#include <fstream>
 
 class Image {
     int width, height, channels;
     unsigned char*** data;
 
 public:
+    static std::streamsize sizeBefore;
+    static std::streamsize sizeAfter;
+
     explicit Image(const std::string& pathString); // Constructor
     ~Image(); // Destructor
 
     bool isLoaded() const; // Checks if the image is successfully loaded
     void save(const std::string& pathString) const; // Saves the image to a file
+    static std::streamsize getFileSize(const std::string& filename); // Returns the size of the file
 
     int getWidth() const; // Returns the width of the image
     int getHeight() const; // Returns the height of the image

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <windows.h>
+#include <chrono>
 #include "Image.h"
 #include "Quadtree.h"
 
@@ -84,12 +85,33 @@ int main() {
     cin >> minBlockSize;
     Quadtree::setMinBlockSize(stoi(minBlockSize));
 
-    //cout << "Enter the output path for the processed image:" << endl;
-    //cin >> outputPath;
+    cout << "Enter the output path for the processed image:" << endl;
+    cin >> outputPath;
 
     cout << "Processing image..." << endl;
-    Quadtree::Compress();
-    image.save("../output.png");
 
+    const chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+    Quadtree::Compress();
+    const chrono::steady_clock::time_point end = chrono::steady_clock::now();
+
+    const auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(end - begin).count();
+    cout << endl << "Processing completed in " << elapsedTime << " ms." << endl;
+
+    image.save(outputPath);
+
+    cout << "Size before compression: " << Image::sizeBefore << " bytes" << endl;
+    cout << "Size after compression: " <<  Image::sizeAfter << " bytes" << endl;
+    cout << "Compression ratio: " << static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore) * 100 << "%" << endl;
+
+    cout << "Tree depth: " << Quadtree::maxDepth << endl;
+    cout << "Number of nodes: " << Quadtree::nodes << endl;
+
+    // Open the output image using the default image viewer
+    char fullPath[MAX_PATH];
+    if (GetFullPathNameA(outputPath.c_str(), MAX_PATH, fullPath, nullptr) == 0) {
+        cerr << "Failed to get the full path of the output file." << endl;
+        return 1;
+    }
+    ShellExecute(nullptr, "open", fullPath, nullptr, nullptr, SW_SHOW);
     return 0;
 }

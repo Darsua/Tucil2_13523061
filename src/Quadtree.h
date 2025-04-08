@@ -13,7 +13,10 @@ class Quadtree {
     static Image* image;
 
 public:
-    Quadtree(int x1, int y1, int x2, int y2); // Constructor
+    static int maxDepth;
+    static int nodes;
+
+    Quadtree(int x1, int y1, int x2, int y2, int depth); // Constructor
     ~Quadtree(); // Destructor
 
     double getError() const; // Calculates the error for the current node with the given method

@@ -3,9 +3,11 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-#include <iostream>
 
 using namespace std;
+
+streamsize Image::sizeBefore = 0;
+streamsize Image::sizeAfter = 0;
 
 Image::Image(const string &pathString): width(0), height(0), channels(0) // Parameterized constructor
 {
@@ -41,6 +43,9 @@ Image::Image(const string &pathString): width(0), height(0), channels(0) // Para
 
     // Free the raw image data
     stbi_image_free(rawImg);
+
+    // Note the size of the image before compression
+    sizeBefore = getFileSize(pathString);
 }
 
 Image::~Image() { // Destructor
@@ -78,9 +83,16 @@ void Image::save(const string &pathString) const {
 
     stbi_write_png(path, width, height, channels, rawImg, width * channels);
 
-    cout << "Image saved to " << pathString << endl;
     delete[] path;
     delete[] rawImg;
+
+    // Note the size of the image after compression
+    sizeAfter = getFileSize(pathString);
+}
+
+streamsize Image::getFileSize(const string& filename) {
+    ifstream file(filename, ios::binary | ios::ate);
+    return file.tellg();
 }
 
 int Image::getWidth() const {

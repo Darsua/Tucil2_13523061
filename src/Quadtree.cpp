@@ -7,21 +7,26 @@ int Quadtree::minBlockSize = 2;
 int Quadtree::threshold = 0;
 Image* Quadtree::image = nullptr;
 
-Quadtree::Quadtree(const int x1, const int y1, const int x2, const int y2) : x1(x1), y1(y1), x2(x2), y2(y2) { // NOLINT(*-no-recursion)
-    double error = getError();
+int Quadtree::maxDepth = 0;
+int Quadtree::nodes = 0;
+
+Quadtree::Quadtree(const int x1, const int y1, const int x2, const int y2, const int depth) : x1(x1), y1(y1), x2(x2), y2(y2) { // NOLINT(*-no-recursion)
+    const double error = getError();
 
     if (error > threshold && (x2 - x1) * (y2 - y1) > minBlockSize) {
         const int midX = (x1 + x2) / 2;
         const int midY = (y1 + y2) / 2;
 
-        children[0] = new Quadtree(x1, y1, midX, midY);
-        children[1] = new Quadtree(midX, y1, x2, midY);
-        children[2] = new Quadtree(x1, midY, midX, y2);
-        children[3] = new Quadtree(midX, midY, x2, y2);
+        children[0] = new Quadtree(x1, y1, midX, midY, depth + 1);
+        children[1] = new Quadtree(midX, y1, x2, midY, depth + 1);
+        children[2] = new Quadtree(x1, midY, midX, y2, depth + 1);
+        children[3] = new Quadtree(midX, midY, x2, y2, depth + 1);
     }
     else {
         image->normalize(x1, y1, x2, y2);
+        maxDepth = max(maxDepth, depth);
     }
+    nodes++;
 }
 
 Quadtree::~Quadtree() {
@@ -62,8 +67,5 @@ void Quadtree::setMinBlockSize(const int m) {
 }
 
 void Quadtree::Compress() {
-    Quadtree compressor(0, 0, image->getWidth() - 1, image->getHeight() - 1);
+    Quadtree compressor(0, 0, image->getWidth() - 1, image->getHeight() - 1, 1);
 }
-
-
-

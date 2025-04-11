@@ -55,6 +55,39 @@ void miku()
 )";
 }
 
+double compress(const string& outputPath, int &threshold, double targetRatio, Image &image, chrono::steady_clock::time_point *end) {
+    double ratio = 1;
+    if (targetRatio > 0) {
+        Quadtree::setThreshold(1);
+        const Image original(image);
+        while (targetRatio < ratio) {
+            image = original;
+            Quadtree::Compress();
+            image.save(outputPath);
+            ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
+            cout << "Current compression ratio: " << ratio * 100 << "% with threshold " << threshold << endl; // Debugging
+            threshold += static_cast<int>(max(1.0, log((ratio - targetRatio) * 100)));
+            Quadtree::setThreshold(threshold);
+        }
+        *end = chrono::steady_clock::now();
+    } else {
+        Quadtree::Compress();
+        *end = chrono::steady_clock::now();
+        image.save(outputPath);
+        ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
+    }
+    return ratio;
+}
+
+void openOut(const string& outputPath) {
+    // Open the output image using the default image viewer
+    char fullPath[MAX_PATH];
+    if (GetFullPathNameA(outputPath.c_str(), MAX_PATH, fullPath, nullptr) == 0) {
+        cerr << "Failed to get the full path of the output file." << endl;
+    }
+    ShellExecute(nullptr, "open", fullPath, nullptr, nullptr, SW_SHOW);
+}
+
 int main() {
     miku(); // Splash Art :3
 
@@ -110,43 +143,21 @@ int main() {
     cout << "Processing image..." << endl;
 
     const chrono::steady_clock::time_point begin = chrono::steady_clock::now();
-    if (targetRatio > 0) {
-        double ratio = 1;
-        Quadtree::setThreshold(1);
-        const Image original(image);
-        while (targetRatio < ratio) {
-            image = original;
-            Quadtree::Compress();
-            image.save(outputPath);
-            ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
-            cout << "Current compression ratio: " << ratio * 100 << "% with threshold " << threshold << endl; // Debugging
-            threshold += static_cast<int>(max(1.0, log((ratio - targetRatio) * 100)));
-            Quadtree::setThreshold(threshold);
-        }
-    } else {
-        Quadtree::Compress();
-    }
-    const chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    chrono::steady_clock::time_point end;
+
+    const double ratio = compress(outputPath, threshold, targetRatio, image, &end);
 
     const auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(end - begin).count();
     cout << endl << "Processing completed in " << elapsedTime << " ms." << endl;
 
-    if (targetRatio == 0) {image.save(outputPath);};
-
-    targetRatio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
     cout << "Size before compression: " << Image::sizeBefore << " bytes" << endl;
     cout << "Size after compression: " <<  Image::sizeAfter << " bytes" << endl;
-    cout << "Compression ratio: " << targetRatio * 100 << "%" << endl;
+    cout << "Compression ratio: " << ratio * 100 << "%" << endl;
 
     cout << "Tree depth: " << Quadtree::maxDepth << endl;
     cout << "Number of nodes: " << Quadtree::nodes << endl;
 
-    // Open the output image using the default image viewer
-    char fullPath[MAX_PATH];
-    if (GetFullPathNameA(outputPath.c_str(), MAX_PATH, fullPath, nullptr) == 0) {
-        cerr << "Failed to get the full path of the output file." << endl;
-        return 1;
-    }
-    ShellExecute(nullptr, "open", fullPath, nullptr, nullptr, SW_SHOW);
+    openOut(outputPath);
+
     return 0;
 }

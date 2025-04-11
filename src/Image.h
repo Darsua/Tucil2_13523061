@@ -7,6 +7,7 @@
 class Image {
     int width, height, channels;
     unsigned char*** data;
+    long long*** sumTable;
 
 public:
     static std::streamsize sizeBefore;

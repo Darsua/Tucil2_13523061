@@ -33,10 +33,30 @@ Image::Image(const string &pathString): width(0), height(0), channels(0) // Para
         }
     }
 
-    // Copy the pixel data
-    for (int i = 0; i < height; ++i) {for (int j = 0; j < width; ++j) {
-        for (int k = 0; k < channels; ++k) {
-            data[i][j][k] = rawImg[(i * width + j) * channels + k];
+    // Allocate memory for the sum table
+    sumTable = new long long**[height];
+    for (int i = 0; i < height; ++i) {
+        sumTable[i] = new long long*[width];
+        for (int j = 0; j < width; ++j) {
+            sumTable[i][j] = new long long[channels];
+            for (int k = 0; k < channels; ++k) {
+                sumTable[i][j][k] = 0;
+            }
+        }
+    }
+
+    // Fill the image data
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                // Fill out the image data
+                data[i][j][k] = rawImg[(i * width + j) * channels + k];
+
+                // Fill out the Sum Table
+                sumTable[i][j][k] = data[i][j][k];
+                if (i > 0) { sumTable[i][j][k] += sumTable[i - 1][j][k]; }
+                if (j > 0) { sumTable[i][j][k] += sumTable[i][j - 1][k]; }
+                if (i > 0 && j > 0) { sumTable[i][j][k] -= sumTable[i - 1][j - 1][k]; }
             }
         }
     }
@@ -59,11 +79,24 @@ Image::Image(const Image &img) : width(img.width), height(img.height), channels(
         }
     }
 
-    // Copy the pixel data
+    // Allocate memory for the sum table
+    sumTable = new long long**[height];
+    for (int i = 0; i < height; ++i) {
+        sumTable[i] = new long long*[width];
+        for (int j = 0; j < width; ++j) {
+            sumTable[i][j] = new long long[channels];
+            for (int k = 0; k < channels; ++k) {
+                sumTable[i][j][k] = 0;
+            }
+        }
+    }
+
+    // Copy the Image data
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
             for (int k = 0; k < channels; ++k) {
                 data[i][j][k] = img.data[i][j][k];
+                sumTable[i][j][k] = img.sumTable[i][j][k];
             }
         }
     }
@@ -140,22 +173,16 @@ int Image::getHeight() const {
 
 double* Image::getMean(const int x1, const int y1, const int x2, const int y2) const {
     auto* mean = new double[channels];
-    for (int k = 0; k < channels; ++k) {
-        mean[k] = 0;
-    }
+    const int area = (x2 - x1 + 1) * (y2 - y1 + 1);
 
-    for (int i = y1; i <= y2; ++i) {
-        for (int j = x1; j <= x2; ++j) {
-            for (int k = 0; k < channels; ++k) {
-                mean[k] += data[i][j][k];
-            }
-        }
-    }
+    for (int k = 0; k < channels; k++) {
+        long long sum = sumTable[y2][x2][k];
+        if (x1 > 0) sum -= sumTable[y2][x1 - 1][k];
+        if (y1 > 0) sum -= sumTable[y1 - 1][x2][k];
+        if (x1 > 0 && y1 > 0) sum += sumTable[y1 - 1][x1 - 1][k];
 
-    for (int k = 0; k < channels; ++k) {
-        mean[k] /= (x2 - x1 + 1) * (y2 - y1 + 1);
+        mean[k] = static_cast<double>(sum) / area;
     }
-
     return mean;
 }
 
@@ -270,13 +297,13 @@ double Image::getEntropy(const int x1, const int y1, const int x2, const int y2)
     }
 
     auto* entropies = new double[channels];
-    int width = x2 - x1 + 1;
-    int height = y2 - y1 + 1;
+    const int width = x2 - x1 + 1;
+    const int height = y2 - y1 + 1;
     for (int k = 0; k < channels; ++k) {
         entropies[k] = 0;
         for (int i = 0; i < 256; ++i) {
             if (histograms[k][i] > 0) {
-                double p = static_cast<double>(histograms[k][i]) / (width * height);
+                const double p = static_cast<double>(histograms[k][i]) / (width * height);
                 entropies[k] -= p * log2(p);
             }
         }

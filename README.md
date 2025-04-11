@@ -28,12 +28,11 @@ The goal is to minimize image size while preserving as much visual fidelity as p
 
 ## 🛠️ Requirements
 
-- C++17 compiler (e.g., g++)
-- `stb_image` and `stb_image_write` libraries (included in the project)
+- Windows :(
 
 ---
 
-## 🚀 How to Build and Run
+## 🚀 How to Run
 
 1. **Clone the repo**
    ```bash
@@ -41,16 +40,13 @@ The goal is to minimize image size while preserving as much visual fidelity as p
    cd quadtree-compression
    ```
 
-2. **Compile**
-   You can use any C++ compiler. Example using g++:
-   ```bash
-   g++ -std=c++17 -O2 Main.cpp Quadtree.cpp Image.cpp -o compressor
+2. **Run the program**  
+   Simply **double-click** the file:
+   ```
+   bin/Quad.exe
    ```
 
-3. **Run**
-   ```bash
-   ./compressor
-   ```
+   > ⚠️ Make sure `stb_image.h` and `stb_image_write.h` are present in the working directory, as well as the required image file(s).
 
 ---
 

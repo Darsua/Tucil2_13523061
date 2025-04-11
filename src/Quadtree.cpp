@@ -5,7 +5,9 @@ using namespace std;
 int Quadtree::method = 0;
 int Quadtree::minBlockSize = 2;
 int Quadtree::threshold = 0;
+
 Image* Quadtree::image = nullptr;
+Gifs* Quadtree::gif = nullptr;
 
 int Quadtree::maxDepth = 0;
 int Quadtree::nodes = 0;
@@ -24,13 +26,16 @@ Quadtree::Quadtree(const int x1, const int y1, const int x2, const int y2, const
     }
     else {
         image->normalize(x1, y1, x2, y2);
-        maxDepth = max(maxDepth, depth);
+        if (depth > maxDepth) {
+            maxDepth = depth;
+            gif->addFrame(*image);
+        }
     }
     nodes++;
 }
 
 Quadtree::~Quadtree() {
-    for (auto & i : children) {
+    for (const auto & i : children) {
         delete i;
     }
 }
@@ -56,6 +61,10 @@ void Quadtree::setMethod(const int m) {
 
 void Quadtree::setImage(Image& img) {
     image = &img;
+}
+
+void Quadtree::setGif(Gifs& g) {
+    gif = &g;
 }
 
 void Quadtree::setThreshold(const int t) {

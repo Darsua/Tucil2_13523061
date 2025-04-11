@@ -2,8 +2,9 @@
 #include <windows.h>
 #include <chrono>
 
-#include "Image.h"
 #include "Quadtree.h"
+#include "Image.h"
+#include "Gifs.h"
 
 using namespace std;
 
@@ -54,7 +55,7 @@ void miku()
 )";
 }
 
-double compress(const string& outputPath, int &threshold, const double targetRatio, Image &image,
+double compress(const string& outputPath, int &threshold, const double targetRatio, Image &image, Gifs &gif,
     chrono::steady_clock::time_point *start, chrono::steady_clock::time_point *end) {
     double ratio;
     if (targetRatio > 0) {
@@ -112,6 +113,8 @@ double compress(const string& outputPath, int &threshold, const double targetRat
         image.save(outputPath);
         ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
     }
+    gif.addFrame(image, 10);
+    gif.finish();
     return ratio;
 }
 
@@ -127,7 +130,7 @@ void openOut(const string& outputPath) {
 int main() {
     miku(); // Splash Art :3
 
-    string inputPath, outputPath;
+    string inputPath, outputPath, gifPath;
     int method, threshold, minBlockSize;
     double targetRatio;
 
@@ -176,12 +179,17 @@ int main() {
     cout << "Enter the output path for the processed image:" << endl;
     cin >> outputPath;
 
+    cout << "Enter the output path for the GIF:" << endl;
+    cin >> gifPath;
+    Gifs gif(gifPath, image);
+    Quadtree::setGif(gif);
+
     cout << "Processing image..." << endl;
 
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
     chrono::steady_clock::time_point end;
 
-    const double ratio = compress(outputPath, threshold, targetRatio, image, &begin, &end);
+    const double ratio = compress(outputPath, threshold, targetRatio, image, gif, &begin, &end);
 
     const auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(end - begin).count();
     cout << endl << "Processing completed in " << elapsedTime << " ms." << endl;

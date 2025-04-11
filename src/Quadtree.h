@@ -2,6 +2,9 @@
 #define QUADTREE_H
 
 #include "Image.h"
+#include "Gifs.h"
+
+class Gifs;
 
 class Quadtree {
     int x1, y1, x2, y2;
@@ -10,7 +13,9 @@ class Quadtree {
     static int method;
     static int threshold;
     static int minBlockSize;
+
     static Image* image;
+    static Gifs* gif;
 
 public:
     static int maxDepth;
@@ -22,6 +27,7 @@ public:
     double getError() const; // Calculates the error for the current node with the given method
     static void setMethod(int m); // Sets the method for error calculation
     static void setImage(Image& img); // Sets the image for the quadtree
+    static void setGif(Gifs& g); // Sets the GIF object for saving frames
     static void setThreshold(int value); // Sets the threshold value
     static void setMinBlockSize(int size); // Sets the minimum block size
     static void Compress(); // Starts the compression process

@@ -171,6 +171,18 @@ int Image::getHeight() const {
     return height;
 }
 
+unsigned char* Image::getData() const {
+    auto* rawImg = new unsigned char[width * height * channels];
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            for (int k = 0; k < channels; ++k) {
+                rawImg[(i * width + j) * channels + k] = data[i][j][k];
+            }
+        }
+    }
+    return rawImg;
+}
+
 double* Image::getMean(const int x1, const int y1, const int x2, const int y2) const {
     auto* mean = new double[channels];
     const int area = (x2 - x1 + 1) * (y2 - y1 + 1);

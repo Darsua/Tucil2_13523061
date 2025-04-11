@@ -24,6 +24,7 @@ public:
 
     int getWidth() const; // Returns the width of the image
     int getHeight() const; // Returns the height of the image
+    unsigned char* getData() const; // Returns the pixel data of the image
 
     double* getMean(int x1, int y1, int x2, int y2) const; // Returns the mean of pixel values in a region
     double getVariance(int x1, int y1, int x2, int y2) const; // Returns the variance of pixel values in a region

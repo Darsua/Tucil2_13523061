@@ -1,5 +1,9 @@
 #include <iostream>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
+
 #include <chrono>
 
 #include "Image.h"
@@ -9,7 +13,10 @@ using namespace std;
 
 void miku()
 {
+    #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
+    #endif
+
     cout <<u8R"(⠀⠀⠀⣠⡤⠤⠤⠤⣤⣤⣤⣤⣤⣤⣄⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⢀⡼⠋⠀⠄⣀⣾⣿⣿⣿⣿⣿⣟⡁⠈⠈⠉⠉⠙⠒⠶⠤⢄⣀⠀⠀⣠⣤⣤⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⡞⠀⠐⠀⣴⣿⣿⣿⣿⡿⠟⠋⠁⠠⠈⡀⠡⠈⠄⠂⡀⠄⢀⠈⠙⠺⢿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -116,12 +123,14 @@ double compress(const string& outputPath, int &threshold, const double targetRat
 }
 
 void openOut(const string& outputPath) {
+    #ifdef _WIN32
     // Open the output image using the default image viewer
     char fullPath[MAX_PATH];
     if (GetFullPathNameA(outputPath.c_str(), MAX_PATH, fullPath, nullptr) == 0) {
         cerr << "Failed to get the full path of the output file." << endl;
     }
     ShellExecute(nullptr, "Open", fullPath, nullptr, nullptr, SW_SHOW);
+    #endif
 }
 
 int main() {
@@ -161,7 +170,7 @@ int main() {
     cout << "Enter the minimum block size (e.g., 15):" << endl;
     cin >> minBlockSize;
     if (minBlockSize < 1) {
-        cerr << "Invalid block size. Please enter a non-negative number." << endl;
+        cerr << "Invalid block size. Please enter a no.,...-negative number." << endl;
         return 1;
     }
     Quadtree::setMinBlockSize(minBlockSize);

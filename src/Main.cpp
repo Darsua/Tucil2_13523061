@@ -1,7 +1,6 @@
 #include <iostream>
 #include <windows.h>
 #include <chrono>
-#include <cmath>
 
 #include "Image.h"
 #include "Quadtree.h"
@@ -55,22 +54,59 @@ void miku()
 )";
 }
 
-double compress(const string& outputPath, int &threshold, double targetRatio, Image &image, chrono::steady_clock::time_point *end) {
-    double ratio = 1;
+double compress(const string& outputPath, int &threshold, const double targetRatio, Image &image,
+    chrono::steady_clock::time_point *start, chrono::steady_clock::time_point *end) {
+    double ratio;
     if (targetRatio > 0) {
-        Quadtree::setThreshold(1);
+        int left = 1, right = 255;
+
         const Image original(image);
-        while (targetRatio < ratio) {
+        Quadtree::setThreshold(threshold);
+
+        // Binary search for the threshold
+        *start = chrono::steady_clock::now();
+
+        // First iteration
+        image = original;
+        Quadtree::Compress();
+        image.save(outputPath);
+        ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
+        cout << "/";
+
+        while (ratio > targetRatio) { // Get the initial range
+            right += 100;
+            left = threshold;
+            Quadtree::setThreshold(threshold = right);
+
             image = original;
             Quadtree::Compress();
             image.save(outputPath);
+
             ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
-            cout << "Current compression ratio: " << ratio * 100 << "% with threshold " << threshold << endl; // Debugging
-            threshold += static_cast<int>(max(1.0, log((ratio - targetRatio) * 100)));
+            cout << "/";
+        }
+
+        while (left != right) { // Binary search
+            threshold = (left + right) / 2;
             Quadtree::setThreshold(threshold);
+
+            image = original;
+            Quadtree::Compress();
+            image.save(outputPath);
+
+            ratio = static_cast<double>(Image::sizeAfter) / static_cast<double>(Image::sizeBefore);
+            cout << "/";
+
+            if (ratio > targetRatio) {
+                left = left == threshold ? right : threshold;
+            } else {
+                right = threshold;
+            }
         }
         *end = chrono::steady_clock::now();
+        cout << endl << "Final threshold: " << threshold << endl;
     } else {
+        *start = chrono::steady_clock::now();
         Quadtree::Compress();
         *end = chrono::steady_clock::now();
         image.save(outputPath);
@@ -85,7 +121,7 @@ void openOut(const string& outputPath) {
     if (GetFullPathNameA(outputPath.c_str(), MAX_PATH, fullPath, nullptr) == 0) {
         cerr << "Failed to get the full path of the output file." << endl;
     }
-    ShellExecute(nullptr, "open", fullPath, nullptr, nullptr, SW_SHOW);
+    ShellExecute(nullptr, "Open", fullPath, nullptr, nullptr, SW_SHOW);
 }
 
 int main() {
@@ -142,10 +178,10 @@ int main() {
 
     cout << "Processing image..." << endl;
 
-    const chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
     chrono::steady_clock::time_point end;
 
-    const double ratio = compress(outputPath, threshold, targetRatio, image, &end);
+    const double ratio = compress(outputPath, threshold, targetRatio, image, &begin, &end);
 
     const auto elapsedTime = chrono::duration_cast<chrono::milliseconds>(end - begin).count();
     cout << endl << "Processing completed in " << elapsedTime << " ms." << endl;
@@ -159,5 +195,6 @@ int main() {
 
     openOut(outputPath);
 
+    cout << endl << "(≧∇≦)ﾉ Thank you for using this program!" << endl;
     return 0;
 }
